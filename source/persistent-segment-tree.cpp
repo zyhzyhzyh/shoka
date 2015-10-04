@@ -1,29 +1,67 @@
-struct Node {
-    int count;
-    Node *left, *right;
+#include<cstdio>
+#include<cstring>
+#include<algorithm>
+using namespace std;
+#define maxSegN 200005
 
-    Node(int count, Node* left, Node* right): count(count), left(left), right(right) {}
-
-    Node* insert(int l, int r, int k);
-};
-
-Node* null;
-
-Node* Node::insert(int l, int r, int k) {
-    if (k < l || r <= k) {
-        return this;
-    }
-    if (l + 1 == r) {
-        return new Node(this->count + 1, null, null);
-    }
-    int m = (l + r) >> 1;
-    return new Node(this->count + 1, 
-            this->left->insert(l, m, k),
-            this->right->insert(m, r, k));
+struct segnode{
+	int count,l,r;//data?
+	int mark;//mark,sample(addition)
+	segnode*c[2];
+	void add(int x){mark+=x;count+=(r-l+1)*x;}
+	void push(){
+		if(c[0]&&mark){
+			c[0]->add(mark);
+			c[1]->add(mark);
+			mark=0;
+		}
+	}
+	void maintain(){
+		if(c[0]){
+			count=c[0]->count+c[1]->count;
+			//more information maintain?
+		}
+	}
+}pool[maxSegN],*stp,*root;
+segnode*segbuild(int l,int r){
+	segnode*o=stp++;
+	o->l=l;o->r=r;//sometimes it's useless;
+	int mid=(l+r)/2;
+	if(l<r)o->c[0]=segbuild(l,mid),o->c[1]=segbuild(mid+1,r),o->maintain();
+	else{
+		//init information?
+	}
+	return o;
 }
-
-int main() {
-    // initialize
-    null = new Node(0, NULL, NULL);
-    null->left = null->right = null;
+int ql,qr,qv;//query L,query R,query value
+int query(segnode*o,int l,int r){
+	o->push();
+	if(ql<=l&&r<=qr)return o->count;
+	else{
+		int mid=(l+r)/2,ans=0;
+		if(ql<=mid)ans+=query(o->c[0],l,mid);
+		if(qr>mid)ans+=query(o->c[1],mid+1,r);
+		return ans;
+	}
+}
+void modify(segnode*o,int l,int r){
+	o->push();
+	if(ql<=l&&r<=qr)o->add(qv);
+	else{
+		int mid=(l+r)/2;
+		if(ql<=mid)modify(o->c[0],l,mid);
+		if(qr>mid)modify(o->c[1],mid+1,r);
+		o->maintain();
+	}
+}
+void segInit(int N){
+	memset(pool,0,sizeof pool);//dangerous!O(N)per test case.
+	stp=pool;
+	root=segbuild(1,N);
+}
+int main(){
+	int n;
+	scanf("%d",&n);
+	segInit(n);
+	return 0;
 }
